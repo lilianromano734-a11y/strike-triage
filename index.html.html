@@ -1,0 +1,186 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.T.R.I.K.E. Triage v2.6</title>
+ACADEMIA MILITAR DE CIENCIAS DE LA SALUD    <style>
+        body { background-color: #000; background-image: url('https://thumbs.dreamstime.com/b/helic%C3%B3pteros-militares-que-cruzan-el-paisaje-destrozado-por-la-guerra-y-prestan-apoyo-a%C3%A9reo-en-un-escenario-de-combate-391746701.jpg'); background-size: cover; background-position: center; background-attachment: fixed; color: white; font-family: sans-serif; padding: 10px; margin: 0; }
+        .card { background: rgba(25, 35, 56, 0.9); border: 1px solid #2d3f61; border-radius: 12px; padding: 15px; margin-bottom: 12px; }
+        .contenedor-header { display: flex; align-items: center; justify-content: space-between; border: 2px solid #e14242; padding: 10px; border-radius: 10px; margin-bottom: 10px; background: rgba(25, 35, 56, 0.9); }
+        .logo-box { width: 50px; height: 50px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #0056b3; }
+        .grid-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-diagnostico { background: #222f4b; border: 1px solid #3b507a; border-radius: 8px; padding: 15px 5px; color: white; cursor: pointer; text-align: center; font-size: 14px; font-weight: bold; }
+        .btn-torniquete { width: 100%; background: #e14242; color: white; padding: 20px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .btn-control { width: 48%; padding: 12px; background: #3b507a; border: none; color: white; border-radius: 6px; font-size: 16px; }
+        #timer { font-family: monospace; font-size: 35px; text-align: center; margin: 10px 0; color: #00ffff; }
+        .desglose-panel { background: #090f1d; padding: 10px; margin-top: 8px; border-radius: 8px; display: none; border: 1px solid #4da3ff; }
+        .desglose-panel button { width: 100%; padding: 12px; margin-bottom: 5px; background: #1f6feb; border: none; color: white; border-radius: 6px; font-size: 14px; }
+        .tabla-bajas { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .tabla-bajas td, .tabla-bajas th { border: 1px solid #2d3f61; padding: 8px; }
+        .btn-reporte { width: 100%; padding: 15px; background: #1f6feb; border: none; color: white; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; border-radius: 8px; }
+        .btn-geo { width: 100%; padding: 15px; background: #6f42c1; border: none; color: white; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; border-radius: 8px; }
+        .box-reporte { background: #050a14; padding: 10px; margin-top: 10px; display: none; color: #00ffff; white-space: pre-wrap; font-family: monospace; font-size: 14px; }
+        #coords-display { font-size: 14px; color: #ffeb3b; text-align: center; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor-header">
+        <div class="logo-box"><svg viewBox="0 0 100 100" fill="#0056b3"><circle cx="50" cy="50" r="45" stroke="#0056b3" stroke-width="5" fill="none"/><path d="M50 10 L85 30 L85 70 L50 90 L15 70 L15 30 Z" fill="#0056b3"/><text x="50" y="60" font-size="20" fill="white" text-anchor="middle" font-weight="bold">UMBV</text></svg></div>
+        <div style="text-align: center;"><h2 style="margin:0; font-size: 18px;">S.T.R.I.K.E. v2.6</h2></div>
+        <div class="logo-box"><svg viewBox="0 0 100 100"><rect x="35" y="10" width="30" height="80" fill="red"/><rect x="10" y="35" width="80" height="30" fill="red"/></svg></div>
+    </div>
+
+    <div class="card">
+        <button class="btn-geo" onclick="obtenerUbicacion()">📍 OBTENER UBICACIÓN GPS</button>
+        <div id="coords-display">Ubicación no obtenida</div>
+    </div>
+
+    <div class="card">
+        <button style="width: 100%; padding: 20px; background: #8b0000; border: none; color: white; font-weight: bold; font-size: 18px; border-radius: 8px;" onclick="alertaPanico()">🚨 BOTÓN DE PÁNICO (APOYO INMEDIATO)</button>
+    </div>
+
+    <div class="card">
+        <button class="btn-torniquete" onclick="iniciarTorniquete()">⚠️ APLICAR TORNIQUETE</button>
+        <div id="timer">00:00</div>
+        <div style="display:flex; justify-content: space-between;">
+            <button class="btn-control" onclick="apagarAlertaClock()">⏹️ DETENER</button>
+            <button class="btn-control" onclick="resetearReloj()">🔄 REINICIAR</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <label>🫁 [A-B] Vía Aérea y Tórax</label>
+        <div class="grid-botones" style="margin-top:10px;">
+            <button class="btn-diagnostico" onclick="toggle('d-neumo')">🫁 Neumotórax</button>
+            <button class="btn-diagnostico" onclick="toggle('d-hemo')">🩸 Hemotórax</button>
+            <button class="btn-diagnostico" onclick="toggle('d-obst')">🚫 Obstrucción V.A.</button>
+            <button class="btn-diagnostico" onclick="toggle('d-ocular')">👁️ Trauma Ocular</button>
+        </div>
+        <div id="d-neumo" class="desglose-panel"><button onclick="reg('Neumotórax Tensión', 'ROJO')">Tensión</button><button onclick="reg('Neumotórax Abierto', 'ROJO')">Abierto</button></div>
+        <div id="d-hemo" class="desglose-panel"><button onclick="reg('Hemotórax Masivo', 'ROJO')">Masivo</button><button onclick="reg('Hemotórax Leve', 'AMARILLO')">Leve</button></div>
+        <div id="d-obst" class="desglose-panel"><button onclick="reg('Cuerpo Extraño V.A.', 'ROJO')">Cuerpo Extraño</button><button onclick="reg('Edema Glotis', 'ROJO')">Edema</button></div>
+        <div id="d-ocular" class="desglose-panel"><button onclick="reg('Penetrante Ocular', 'ROJO')">Penetrante</button><button onclick="reg('Contusión Ocular', 'AMARILLO')">Contusión</button></div>
+    </div>
+
+    <div class="card">
+        <label>🩹 [C-D-E] Trauma y Otros</label>
+        <div class="grid-botones" style="margin-top:10px;">
+            <button class="btn-diagnostico" onclick="toggle('d-frac')">🦴 Fracturas</button>
+            <button class="btn-diagnostico" onclick="toggle('d-hipo')">🥶 Hipotermia</button>
+            <button class="btn-diagnostico" onclick="toggle('d-ponzo')">🐍 Animal Ponzoñoso</button>
+            <button class="btn-diagnostico" onclick="toggle('d-leve')">🟢 Paciente Leve</button>
+        </div>
+        <div id="d-frac" class="desglose-panel"><button onclick="reg('Fractura Abierta', 'ROJO')">Abierta</button><button onclick="reg('Fractura Cerrada', 'AMARILLO')">Cerrada</button></div>
+        <div id="d-hipo" class="desglose-panel"><button onclick="reg('Hipotermia Severa', 'ROJO')">Severa</button><button onclick="reg('Hipotermia Leve', 'AMARILLO')">Leve</button></div>
+        <div id="d-ponzo" class="desglose-panel"><button onclick="reg('Mordedura Serpiente', 'AMARILLO')">Serpiente</button><button onclick="reg('Picadura Escorpión', 'AMARILLO')">Escorpión</button></div>
+        <div id="d-leve" class="desglose-panel"><button onclick="reg('Ambulatorio', 'VERDE')">Herida Menor</button><button onclick="reg('Contusión Leve', 'VERDE')">Contusión</button></div>
+    </div>
+
+    <div class="card">
+        <label>🌊 [F] Desastres Naturales</label>
+        <div class="grid-botones" style="margin-top:10px;">
+            <button class="btn-diagnostico" onclick="toggle('d-apl')">🏗️ Aplastamiento</button>
+            <button class="btn-diagnostico" onclick="toggle('d-sum')">💧 Sumersión</button>
+            <button class="btn-diagnostico" onclick="toggle('d-pen')">🔪 Penetrantes</button>
+            <button class="btn-diagnostico" onclick="toggle('d-exp')">❄️ Exposición</button>
+        </div>
+        <div id="d-apl" class="desglose-panel"><button onclick="reg('Síndrome Aplastamiento', 'ROJO')">S. Aplastamiento</button><button onclick="reg('Fractura Múltiple', 'ROJO')">Fracturas</button></div>
+        <div id="d-sum" class="desglose-panel"><button onclick="reg('Casi Ahogamiento', 'ROJO')">Casi Ahogado</button><button onclick="reg('Neumonitis Química', 'AMARILLO')">Neumonitis</button></div>
+        <div id="d-pen" class="desglose-panel"><button onclick="reg('Herida Lacerante', 'AMARILLO')">Laceración</button><button onclick="reg('Cuerpo Extraño', 'AMARILLO')">Cuerpo Extraño</button></div>
+        <div id="d-exp" class="desglose-panel"><button onclick="reg('Hipotermia Media', 'AMARILLO')">Hipotermia</button><button onclick="reg('Deshidratación', 'VERDE')">Deshidratación</button></div>
+    </div>
+
+    <div class="card">
+        <label>📊 Registro de Heridos</label>
+        <table class="tabla-bajas"><thead><tr><th>ID</th><th>Dx</th><th>Prio</th></tr></thead><tbody id="lista-bajas"></tbody></table>
+        <button class="btn-reporte" onclick="menuReporte()">📻 GENERAR INFORME</button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-reporte" style="background:#25d366" onclick="enviarApp('wa')">💬 WhatsApp</button>
+            <button class="btn-reporte" style="background:#0088cc" onclick="enviarApp('tg')">✈️ Telegram</button>
+            <button class="btn-reporte" style="background:#ff9800" onclick="enviarApp('sms')">📱 SMS</button>
+        </div>
+        <button class="btn-geo" style="background:#4a4a4a" onclick="mostrarHistorial()">📜 HISTORIAL DE INFORMES</button>
+        <div id="panel-historial" class="box-reporte" style="display:none; text-align: left;"></div>
+        <div id="pantalla-reporte" class="box-reporte"></div>
+    </div>
+
+    <script>
+        let seg=0, int=null, cont=1, hist=[];
+        let userCoords = "No obtenida";
+        
+        function obtenerUbicacion() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    userCoords = `Lat: ${pos.coords.latitude.toFixed(6)}, Lon: ${pos.coords.longitude.toFixed(6)}`;
+                    document.getElementById('coords-display').innerText = userCoords;
+                }, (err) => {
+                    alert("Error obteniendo ubicación: " + err.message);
+                });
+            } else {
+                alert("Geolocalización no soportada por el navegador.");
+            }
+        }
+        
+        function alertaPanico() {
+            const msg = `🚨 ALERTA: SOLICITO APOYO INMEDIATO.\nUbicación: ${userCoords}\nNivel de riesgo: CRÍTICO.\nFIN DEL MENSAJE.`;
+            const b = document.getElementById('pantalla-reporte');
+            b.style.display="block";
+            b.innerText = msg;
+            guardarEnHistorial(msg);
+            alert("Reporte de pánico generado.");
+        }
+
+        function guardarEnHistorial(texto) {
+            let h = JSON.parse(localStorage.getItem('strike_hist') || '[]');
+            h.unshift({fecha: new Date().toLocaleTimeString(), contenido: texto});
+            if (h.length > 3) h.pop();
+            localStorage.setItem('strike_hist', JSON.stringify(h));
+        }
+
+        function mostrarHistorial() {
+            const p = document.getElementById('panel-historial');
+            const h = JSON.parse(localStorage.getItem('strike_hist') || '[]');
+            if (h.length === 0) { alert("No hay informes previos."); return; }
+            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+            p.innerHTML = "<strong>Últimos informes:</strong><br><br>" + h.map((item, i) => `[${item.fecha}]<br>${item.contenido.substring(0,50)}... <button onclick="reenviar(${i})">Reenviar</button><hr>`).join('');
+        }
+
+        function reenviar(idx) {
+            const h = JSON.parse(localStorage.getItem('strike_hist'));
+            const b = document.getElementById('pantalla-reporte');
+            b.style.display="block";
+            b.innerText = h[idx].contenido;
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function iniciarTorniquete() { if(!int) int = setInterval(() => { seg++; document.getElementById('timer').innerText = String(Math.floor(seg/60)).padStart(2,'0') + ":" + String(seg%60).padStart(2,'0'); }, 1000); }
+        function apagarAlertaClock() { clearInterval(int); int=null; }
+        function resetearReloj() { apagarAlertaClock(); seg=0; document.getElementById('timer').innerText = "00:00"; }
+        function toggle(id) { document.querySelectorAll('.desglose-panel').forEach(p => { if(p.id !== id) p.style.display = 'none'; }); const el = document.getElementById(id); el.style.display = (el.style.display === 'block') ? 'none' : 'block'; }
+        function cerrarTodos() { document.querySelectorAll('.desglose-panel').forEach(p => p.style.display = 'none'); }
+        function reg(dx, prio) { hist.push({id:`#00${cont++}`, dx, prio}); document.getElementById('lista-bajas').innerHTML += `<tr><td>${hist[hist.length-1].id}</td><td>${dx}</td><td>${prio}</td></tr>`; cerrarTodos(); }
+        
+        function menuReporte() {
+            const opcion = prompt("Seleccione:\n1. Evacuación\n2. Traslado");
+            if (!opcion || (opcion !== "1" && opcion !== "2")) return;
+            const accion = (opcion === "1") ? "EVACUACIÓN" : "TRASLADO";
+            const b = document.getElementById('pantalla-reporte');
+            b.style.display="block";
+            b.innerText = `=== REPORTE DE HERIDOS ===\nUbicación: ${userCoords}\n\n` + hist.map(h => `${h.id} [${h.prio}]: ${h.dx}`).join('\n') + `\n\nSE SOLICITA ${accion} DE LOS HERIDOS AL PUESTO DE SOCORRO MÁS CERCANO.\nFIN DEL MENSAJE.`;
+            guardarEnHistorial(b.innerText);
+        }
+        function enviarApp(app) { 
+            const b = document.getElementById('pantalla-reporte'); 
+            if(!b.innerText) { alert("Genera el informe primero"); return; }
+            const numero = "584249668376";
+            let url = "";
+            if (app === 'wa') url = `https://wa.me/${numero}?text=${encodeURIComponent(b.innerText)}`;
+            else if (app === 'tg') url = `https://t.me/share/url?url=${encodeURIComponent(b.innerText)}`;
+            else if (app === 'sms') url = `sms:${numero}?body=${encodeURIComponent(b.innerText)}`;
+            window.open(url, '_blank'); 
+        }
+    </script>
+</body>
+</html>
